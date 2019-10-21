@@ -45,7 +45,7 @@ export default {
     async processGeocode() {
       const res = await ymaps.geocode(this.address);
       const coordinates = res.geoObjects.get(0).geometry._coordinates;
-      this.$emit('changeCoordinates', coordinates);
+      this.$emit('change-coordinates', coordinates);
     },
   },
   created() {

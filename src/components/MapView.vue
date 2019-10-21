@@ -5,11 +5,11 @@
       <l-tile-layer :url="url" />
       <l-marker :lat-lng="markerLatLng" />
     </l-map>
-    <map-search class="map-search" @changeCoordinates="changeCoordinates" />
+    <map-search class="map-search" @change-coordinates="changeCoordinates" />
     <el-button-group class="map-actions">
       <el-button :class="{ active: itemAddingActive }" @click="clickItemAddingButton" icon="el-icon-plus" circle />
     </el-button-group>
-    <new-map-point-menu :active.sync="newMapPointMenuActive" :lat-lng="newMapPointMenuLatLng" />
+    <new-map-point-menu :active.sync="newMapPointMenuActive" :lat-lng="newMapPointMenuLatLng" @add-point="addPoint" />
   </div>
 </template>
 
@@ -64,6 +64,10 @@ export default {
     },
     clickItemAddingButton() {
       this.itemAddingActive = !this.itemAddingActive;
+    },
+    addPoint(data, cb) {
+      console.log(data);
+      setTimeout(cb, 3000);
     },
   },
 };
