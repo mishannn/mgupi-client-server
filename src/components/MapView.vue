@@ -3,13 +3,26 @@
     <l-map :zoom="zoom" :center="center" :options="{ zoomControl: false }" @click="clickMap" :style="mapStyle">
       <l-control-zoom position="bottomright" />
       <l-tile-layer :url="url" />
-      <l-marker :lat-lng="markerLatLng" />
+      <l-marker :lat-lng="markerLatLng" :icon="centerIcon" />
+      <l-marker v-for="point in points" :key="point.id" :lat-lng="point.latLng" :icon="pointIcon">
+        <l-popup>
+          <span style="font-weight: bold; text-transform: capitalize; font-size: 14px;">{{ point.name }}</span>
+          <br />
+          <span style="white-space: pre;">{{ point.desc }}</span>
+          <br />
+          <a href="#" @click.prevent="deletePointEvent(point)">Удалить</a>
+        </l-popup>
+      </l-marker>
     </l-map>
     <map-search class="map-search" @change-coordinates="changeCoordinates" />
     <el-button-group class="map-actions">
       <el-button :class="{ active: itemAddingActive }" @click="clickItemAddingButton" icon="el-icon-plus" circle />
     </el-button-group>
-    <new-map-point-menu :active.sync="newMapPointMenuActive" :lat-lng="newMapPointMenuLatLng" @add-point="addPoint" />
+    <new-map-point-menu
+      :active.sync="newMapPointMenuActive"
+      :lat-lng="newMapPointMenuLatLng"
+      @add-point="addPointEvent"
+    />
   </div>
 </template>
 
@@ -18,11 +31,16 @@ import LMap from './leaflet/LMap';
 import LTileLayer from './leaflet/LTileLayer';
 import LMarker from './leaflet/LMarker';
 import LControlZoom from './leaflet/LControlZoom';
+import LPopup from './leaflet/LPopup';
 import MapSearch from './ui/MapSearch';
 import NewMapPointMenu from './ui/NewMapPointMenu';
+import mapStoreMixin from '../mixins/store/mapStoreMixin';
+import { icon } from 'leaflet';
+import '../plugins/Leaflet.Icon.Glyph';
 
 export default {
   name: 'MapView',
+  mixins: [mapStoreMixin],
   components: {
     LMap,
     LTileLayer,
@@ -30,11 +48,21 @@ export default {
     LControlZoom,
     MapSearch,
     NewMapPointMenu,
+    LPopup,
   },
   data: () => ({
     url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
     zoom: 11,
     center: [55.755814, 37.617635],
+    centerIcon: icon.glyph({
+      prefix: 'mdi',
+      glyph: 'crosshairs-gps',
+      glyphPos: [1.5, 4.5],
+    }),
+    pointIcon: icon.glyph({
+      prefix: 'mdi',
+      glyph: 'map',
+    }),
     markerLatLng: [55.755814, 37.617635],
     newMapPointMenuActive: false,
     newMapPointMenuLatLng: null,
@@ -65,10 +93,16 @@ export default {
     clickItemAddingButton() {
       this.itemAddingActive = !this.itemAddingActive;
     },
-    addPoint(data, cb) {
-      console.log(data);
-      setTimeout(cb, 3000);
+    async addPointEvent(data, cb) {
+      await this.addPoint({ point: data });
+      cb();
     },
+    async deletePointEvent(point) {
+      await this.deletePoint({ id: point.id });
+    },
+  },
+  created() {
+    this.loadPoints();
   },
 };
 </script>
