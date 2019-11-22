@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <map-view />
+    <login-view v-if="!jwtToken" />
+    <map-view v-else />
     <div class="small-screen-banner">
       <div class="small-screen-banner__alert">
         Экран устройства слишком мал для отображения приложения!
@@ -11,11 +12,18 @@
 
 <script>
 import MapView from './components/MapView';
+import LoginView from './components/LoginView';
+import authStoreMixin from './mixins/store/authStoreMixin';
 
 export default {
   name: 'App',
+  mixins: [authStoreMixin],
   components: {
     MapView,
+    LoginView,
+  },
+  created() {
+    this.restoreSession();
   },
 };
 </script>

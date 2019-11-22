@@ -65,3 +65,9 @@ body {
     color: inherit;
   }
 }
+
+.el-notification {
+  &__content {
+    text-align: left;
+  }
+}

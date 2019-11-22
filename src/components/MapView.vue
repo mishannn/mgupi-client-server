@@ -2,21 +2,31 @@
   <div class="map-view">
     <l-map :zoom="zoom" :center="center" :options="{ zoomControl: false }" @click="clickMap" :style="mapStyle">
       <l-control-zoom position="bottomright" />
-      <l-tile-layer :url="url" />
+      <l-tile-layer :url="url" :options="{ detectRetina: true }" />
       <l-marker :lat-lng="markerLatLng" :icon="centerIcon" />
       <l-marker v-for="point in points" :key="point.id" :lat-lng="point.latLng" :icon="pointIcon">
         <l-popup>
           <span style="font-weight: bold; text-transform: capitalize; font-size: 14px;">{{ point.name }}</span>
           <br />
           <span style="white-space: pre;">{{ point.desc }}</span>
-          <br />
-          <a href="#" @click.prevent="deletePointEvent(point)">Удалить</a>
+          <template v-if="point.my">
+            <br />
+            <a href="#" @click.prevent="deletePointEvent(point)">Удалить</a>
+          </template>
         </l-popup>
       </l-marker>
     </l-map>
     <map-search class="map-search" @change-coordinates="changeCoordinates" />
     <el-button-group class="map-actions">
-      <el-button :class="{ active: itemAddingActive }" @click="clickItemAddingButton" icon="el-icon-plus" circle />
+      <el-button
+        :class="{ active: itemAddingActive }"
+        @click="clickItemAddingButton"
+        icon="el-icon-plus"
+        title="Добавить точку"
+        circle
+      />
+      <el-button @click="refreshPoints" icon="el-icon-refresh" title="Обновить точки" circle />
+      <el-button @click="signOut" icon="el-icon-close" title="Выйти из аккаунта" circle />
     </el-button-group>
     <new-map-point-menu
       :active.sync="newMapPointMenuActive"
@@ -37,10 +47,11 @@ import NewMapPointMenu from './ui/NewMapPointMenu';
 import mapStoreMixin from '../mixins/store/mapStoreMixin';
 import { icon } from 'leaflet';
 import '../plugins/Leaflet.Icon.Glyph';
+import authStoreMixin from '../mixins/store/authStoreMixin';
 
 export default {
   name: 'MapView',
-  mixins: [mapStoreMixin],
+  mixins: [mapStoreMixin, authStoreMixin],
   components: {
     LMap,
     LTileLayer,
@@ -94,15 +105,55 @@ export default {
       this.itemAddingActive = !this.itemAddingActive;
     },
     async addPointEvent(data, cb) {
-      await this.addPoint({ point: data });
+      const result = await this.addPoint({ point: data, token: this.jwtToken });
+
+      if (result.success) {
+        this.$notify.success({
+          title: 'Добавление точки',
+          message: 'Точка успешно добавлена',
+        });
+      } else {
+        this.$notify.error({
+          title: 'Добавление точки',
+          message: result.error,
+        });
+      }
+
       cb();
     },
     async deletePointEvent(point) {
-      await this.deletePoint({ id: point.id });
+      const result = await this.deletePoint({ id: point.id, token: this.jwtToken });
+
+      if (result.success) {
+        this.$notify.success({
+          title: 'Удаление точки',
+          message: 'Точка успешно удалена',
+        });
+      } else {
+        this.$notify.error({
+          title: 'Удаление точки',
+          message: result.error,
+        });
+      }
+    },
+    async refreshPoints() {
+      const result = await this.loadPoints({ token: this.jwtToken });
+
+      if (result.success) {
+        this.$notify.success({
+          title: 'Обновление точек',
+          message: 'Точки успешно обновлены',
+        });
+      } else {
+        this.$notify.error({
+          title: 'Обновление точек',
+          message: result.error,
+        });
+      }
     },
   },
   created() {
-    this.loadPoints();
+    this.refreshPoints();
   },
 };
 </script>
@@ -129,9 +180,11 @@ export default {
   right: 10px;
   top: 10px;
   z-index: 500;
+  box-shadow: 0px 3px 6px 0px #0000004f;
+  border-radius: 20px;
 
-  .el-button {
+  /* .el-button {
     box-shadow: 0px 3px 6px 0px #0000004f;
-  }
+  } */
 }
 </style>

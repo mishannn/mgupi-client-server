@@ -1,63 +1,116 @@
-const LOCALSTORAGE_POINTS_KEY = 'points';
+import axios from 'axios';
+import config from '../config';
 
 class MapApi {
-  static getPoints() {
-    return new Promise(resolve => {
-      let points;
-      try {
-        points = JSON.parse(localStorage.getItem(LOCALSTORAGE_POINTS_KEY)) || [];
-      } catch (e) {
-        points = [];
+  static async getPoints(token) {
+    try {
+      const response = await axios.get(`${config.baseUrl}/point/all`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+
+      return {
+        success: true,
+        points: response.data,
+      };
+    } catch (e) {
+      if (!e.response) {
+        return {
+          success: false,
+          error: 'Не удалось подключиться к серверу',
+        };
       }
 
-      setTimeout(() => {
-        resolve(points);
-      }, 500);
-    });
+      if (!e.response.data) {
+        return {
+          success: false,
+          error: 'Пришел пустой ответ от сервера',
+        };
+      }
+
+      return {
+        success: false,
+        error: 'Не удалось получить точки',
+      };
+    }
   }
 
-  static addPoint(point) {
-    return new Promise(resolve => {
-      const id = new Date().getTime();
+  static async addPoint(point, token) {
+    try {
+      const response = await axios.post(
+        `${config.baseUrl}/point`,
+        {
+          description: point.desc,
+          lat: point.latLng[0],
+          lng: point.latLng[1],
+          title: point.name,
+        },
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
-      let points;
-      try {
-        points = JSON.parse(localStorage.getItem(LOCALSTORAGE_POINTS_KEY)) || [];
-      } catch (e) {
-        points = [];
+      return {
+        success: true,
+        point: response.data,
+      };
+    } catch (e) {
+      if (!e.response) {
+        return {
+          success: false,
+          error: 'Не удалось подключиться к серверу',
+        };
       }
 
-      points.push({ id, ...point });
-      localStorage.setItem(LOCALSTORAGE_POINTS_KEY, JSON.stringify(points));
+      if (!e.response.data) {
+        return {
+          success: false,
+          error: 'Пришел пустой ответ от сервера',
+        };
+      }
 
-      setTimeout(() => {
-        resolve(id);
-      }, 500);
-    });
+      return {
+        success: false,
+        error: 'Не удалось добавить точку',
+      };
+    }
   }
 
-  static deletePoint(id) {
-    return new Promise(resolve => {
-      let points;
-      try {
-        points = JSON.parse(localStorage.getItem(LOCALSTORAGE_POINTS_KEY)) || [];
-      } catch (e) {
-        points = [];
+  static async deletePoint(id, token) {
+    try {
+      const response = await axios.delete(`${config.baseUrl}/point/${id}`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+
+      return {
+        success: true,
+        point: response.data,
+      };
+    } catch (e) {
+      if (!e.response) {
+        return {
+          success: false,
+          error: 'Не удалось подключиться к серверу',
+        };
       }
 
-      const pointIndex = points.findIndex(point => point.id === id);
-      if (pointIndex === -1) {
-        resolve(false);
-        return;
+      if (!e.response.data) {
+        return {
+          success: false,
+          error: 'Пришел пустой ответ от сервера',
+        };
       }
 
-      points.splice(pointIndex, 1);
-      localStorage.setItem(LOCALSTORAGE_POINTS_KEY, JSON.stringify(points));
-
-      setTimeout(() => {
-        resolve(true);
-      }, 500);
-    });
+      return {
+        success: false,
+        error: 'Не удалось удалить точку',
+      };
+    }
   }
 }
 
